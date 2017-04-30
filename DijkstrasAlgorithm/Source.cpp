@@ -95,7 +95,8 @@ int minDistance(int dist[], bool sptSet[])
 	return min_index;
 }
 
-// Prints shortest paths from src to all other vertices
+// Prints shortest paths from src to all other 
+//http://www.geeksforgeeks.org/printing-paths-dijkstras-shortest-path-algorithm/
 void Graph::shortestPath(char node)
 {
 	int src = (node - 'A');
