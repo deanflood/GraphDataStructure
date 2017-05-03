@@ -6,18 +6,22 @@ using namespace std;
 #include <algorithm>
 #include <map>
 
-
+int const GRAPH_SIZE = 8;
 class Graph
 {
-	int nodes; 
-	int edges[8][8] = {0};
-
+	int nodes;
+	int edges[GRAPH_SIZE][GRAPH_SIZE] = { 0 };
+	void printPath(int parent[], int j);
+	void printDistances(int distances[], int start);
 public:
-	Graph(int node); 
+	Graph(int node);
 	void addEdge(char node1, char node2, int weight);
 	void printNodes();
 	void distancesToAllNodes(char startNode);
-	void shortestPath(char src);
+	void distanceToEveryNode(char start);
+	void distanceBetweenTwoNodes(char start, char end);
+	char getLetter(int i);
+	char getInt(char i);
 
 };
 
@@ -32,6 +36,7 @@ void Graph::addEdge(char node1, char node2, int weight)
 	int node2Index = (node2 - 'A');
 
 	edges[node1Index][node2Index] = weight;
+	edges[node2Index][node1Index] = weight;
 
 }
 
@@ -42,11 +47,11 @@ void Graph::printNodes()
 			if (j == i)
 				cout << "# ";
 			else
-			cout << edges[i][j] << " " ;
-			
+				cout << edges[i][j] << " ";
 		}
 		cout << endl;
 	}
+	cout << endl;
 }
 
 void Graph::distancesToAllNodes(char startNode)
@@ -55,106 +60,121 @@ void Graph::distancesToAllNodes(char startNode)
 
 	for (int j = 0; j < nodes; j++) {
 		if (edges[nodeIndex][j] != 0) {
-			char ch = ('A' + j);
+			char ch = getLetter(j);
 			cout << "Distance from " << startNode << " to " << ch << ": " << edges[nodeIndex][j] << " " << endl;
 		}
 	}
 }
 
-void printPath(int parent[], int j)
+void Graph::printPath(int parent[], int j)
 {
 	// Base Case : If j is source
-	if (parent[j] == -1)
+	if (parent[j] == -1) {
 		return;
-
+	}
 	printPath(parent, parent[j]);
-
-	printf("%d ", j);
+	char jToChar = getLetter(j);
+	cout << jToChar;
 }
 
-void printSolution(int dist[], int n, int parent[])
+//http://www.geeksforgeeks.org/printing-paths-dijkstras-shortest-path-algorithm/
+
+void Graph::printDistances(int distances[], int start)
 {
-	int src = 0;
-	printf("Vertex\t  Distance\tPath");
-	for (int i = 1; i < 8; i++)
-	{
-		printf("\n%d -> %d \t\t %d\t\t%d ", src, i, dist[i], src);
-		printPath(parent, i);
+	cout << "Vertex \tDistance\n";
+	for (int i = 0; i < 8; i++) {
+		if (i != start) {
+			char iToLetter = getLetter(i);
+			cout << "   " << iToLetter << " \t   " << distances[i] << "\n";
+		}
 	}
 }
 
-int minDistance(int dist[], bool sptSet[])
+int minDistance(int distances[], bool sptSet[])
 {
-	// Initialize min value
 	int min = INT_MAX, min_index;
 
-	for (int v = 0; v < 8; v++)
-		if (sptSet[v] == false && dist[v] <= min)
-			min = dist[v], min_index = v;
-
+	for (int i = 0; i < 8; i++) {
+		if (sptSet[i] == false && distances[i] <= min) {
+			min = distances[i];
+			min_index = i;
+		}
+	}
 	return min_index;
 }
 
 // Prints shortest paths from src to all other 
-//http://www.geeksforgeeks.org/printing-paths-dijkstras-shortest-path-algorithm/
-void Graph::shortestPath(char node)
+void Graph::distanceToEveryNode(char start)
 {
-	int src = (node - 'A');
-	int dist[8];  // The output array. dist[i] will hold
-				  // the shortest distance from src to i
+	int nodeInt = start - 'A';
+	cout << "Shortest path from " << start << " to all nodes\n";
+	int distances[GRAPH_SIZE];
+	bool processed[GRAPH_SIZE];
 
-				  // sptSet[i] will true if vertex i is included / in shortest
-				  // path tree or shortest distance from src to i is finalized
-	bool sptSet[8];
+	for (int i = 0; i < GRAPH_SIZE; i++)
+		distances[i] = INT_MAX, processed[i] = false;
 
-	// Parent array to store shortest path tree
-	int parent[8];
+	distances[nodeInt] = 0;
 
-	// Initialize all distances as INFINITE and stpSet[] as false
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < GRAPH_SIZE - 1; i++)
 	{
-		parent[0] = -1;
-		dist[i] = INT_MAX;
-		sptSet[i] = false;
-	}
+		int minDist = minDistance(distances, processed);
+		processed[minDist] = true;
 
-	// Distance of source vertex from itself is always 0
-	dist[src] = 0;
-
-	// Find shortest path for all vertices
-	for (int count = 0; count < 8 - 1; count++)
-	{
-		// Pick the minimum distance vertex from the set of
-		// vertices not yet processed. u is always equal to src
-		// in first iteration.
-		int u = minDistance(dist, sptSet);
-
-		// Mark the picked vertex as processed
-		sptSet[u] = true;
-
-		// Update dist value of the adjacent vertices of the
-		// picked vertex.
-		for (int v = 0; v < 8; v++)
-
-			// Update dist[v] only if is not in sptSet, there is
-			// an edge from u to v, and total weight of path from
-			// src to v through u is smaller than current value of
-			// dist[v]
-			if (!sptSet[v] && edges[u][v] &&
-				dist[u] + edges[u][v] < dist[v])
-			{
-				parent[v] = u;
-				dist[v] = dist[u] + edges[u][v];
+		for (int j = 0; j < GRAPH_SIZE; j++) {
+			
+			if (!processed[j] && edges[minDist][j] && distances[minDist] != INT_MAX
+				&& distances[minDist] + edges[minDist][j] < distances[j]) {
+				distances[j] = distances[minDist] + edges[minDist][j];
 			}
+		}
 	}
-	printSolution(dist, 8, parent);
+	printDistances(distances, start);
 }
 
+void Graph::distanceBetweenTwoNodes(char start, char end)
+{
+	int startNode = getInt(start);
+	int endNode = getInt(end);
+
+	int distances[8];
+	bool processed[8];
+
+	for (int i = 0; i < 8; i++)
+		distances[i] = INT_MAX, processed[i] = false;
+
+	distances[startNode] = 0;
+
+	for (int i = 0; i < 8 - 1; i++)
+	{
+		int minDist = minDistance(distances, processed);
+		processed[minDist] = true;
+
+		for (int j = 0; j < 8; j++) {
+			if (!processed[j] && edges[minDist][j] && distances[minDist] != INT_MAX
+				&& distances[minDist] + edges[minDist][j] < distances[j]) {
+				distances[j] = distances[minDist] + edges[minDist][j];
+			}
+		}
+	}
+
+	cout << "Distance from " << start << " -> " << end << " is " << distances[endNode] << "\n";
+}
+
+char Graph::getLetter(int i)
+{
+	return ('A' + i);
+}
+
+char Graph::getInt(char i)
+{
+	return (i - 'A');
+}
 
 
 int main()
 {
-	Graph g(8);
+	Graph g(GRAPH_SIZE);
 
 	g.addEdge('A', 'E', 4);
 	g.addEdge('A', 'D', 8);
@@ -168,12 +188,11 @@ int main()
 	g.addEdge('F', 'G', 5);
 	g.addEdge('F', 'H', 3);
 
-
-
 	g.printNodes();
 
-	g.shortestPath('A');
+	g.distanceToEveryNode('B');
 
+	g.distanceBetweenTwoNodes('A', 'G');
 
 	int wait = 0;
 	cin >> wait;
